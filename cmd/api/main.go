@@ -1,36 +1,44 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/HondaAo/video-app/config"
+	logger "github.com/HondaAo/video-app/log"
+	"github.com/HondaAo/video-app/server"
+	"github.com/HondaAo/video-app/utils"
 )
 
-var db *gorm.DB
+func main() {
+	configPath := config.GetConfigPath(os.Getenv("config"))
 
-func init() {
-	addr := os.Getenv("DB_ADDR")
-	name := os.Getenv("DB_NAME")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	log.Println(addr)
-	log.Println(name)
-	log.Println(user)
-	log.Println(password)
+	cfgFile, err := config.LoadConfig(configPath)
 
-	dsn := fmt.Sprintf(
-		"%s:%s@(%s)/%s?charset=utf8mb4&parseTime=true",
-		user,
-		password,
-		addr,
-		name,
-	)
-	var err error
-	db, err = gorm.Open(mysql.Open(dsn))
+	cfg, err := config.ParseConfig(cfgFile)
 	if err != nil {
-		log.Fatalf("main SQL Open: %v", err)
+		log.Fatalf("ParseConfig: %v", err)
+	}
+
+	appLogger := logger.NewApiLogger(cfg)
+
+	appLogger.InitLogger()
+	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s, SSL: %v", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode, cfg.Server.SSL)
+
+	if err != nil {
+		log.Fatalf("LoadConfig: %v", err)
+	}
+
+	mysql := utils.NewDB()
+	defer mysql.Close()
+	appLogger.Info("Mysql connected")
+
+	redisClient := utils.NewRedisClient(cfg)
+	defer redisClient.Close()
+	appLogger.Info("Redis connected")
+
+	s := server.NewServer(mysql, *cfg, redisClient, appLogger)
+	if err = s.Run(); err != nil {
+		log.Fatal(err)
 	}
 }

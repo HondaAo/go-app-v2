@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -13,12 +14,11 @@ import (
 	"github.com/HondaAo/video-app/log"
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type Server struct {
 	echo        *echo.Echo
-	db          *gorm.DB
+	db          *sql.DB
 	redisClient *redis.Client
 	conf        config.Config
 	log         log.Logger
@@ -29,8 +29,8 @@ const (
 	ctxTimeout     = 5
 )
 
-func NewServer(db *gorm.DB, conf config.Config, redisClient *redis.Client) *Server {
-	return &Server{echo: echo.New(), db: db, redisClient: redisClient, conf: conf}
+func NewServer(db *sql.DB, conf config.Config, redisClient *redis.Client, logger log.Logger) *Server {
+	return &Server{echo: echo.New(), db: db, redisClient: redisClient, conf: conf, log: logger}
 }
 
 func (s Server) Run() error {

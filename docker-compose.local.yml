@@ -34,12 +34,24 @@ services:
        - mysql-data:/var/lib/mysql
     networks:
       - web_api
+  migrate:
+    build:
+      context: .
+      dockerfile: ./migrate/Dockerfile
+    environment:
+      RAILS_ENV: local
+    volumes:
+      - ./migrate:/app/migrate
+    networks:
+      - web_api
+    depends_on:
+      - db
   grafana:
     container_name: grafana
     restart: always
     image: grafana/grafana
     ports:
-      - '3000:3000'
+      - '3001:3000'
     networks:
       - web_api
   redis:
