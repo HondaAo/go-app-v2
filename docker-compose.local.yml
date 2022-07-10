@@ -1,0 +1,56 @@
+version: "3"
+services:
+  api:
+    container_name: api-local
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      MYSQL_HOST: db 
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DB: videos-app
+    ports:
+      - 4000:4000
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app:cached
+    depends_on:
+      - db
+      - redis
+    networks:
+      - web_api
+  db:
+    container_name: db
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: videos-app
+      TZ: Asia/Tokyo
+    ports: 
+      - 3306:3306
+    volumes:
+       - mysql-data:/var/lib/mysql
+    networks:
+      - web_api
+  grafana:
+    container_name: grafana
+    restart: always
+    image: grafana/grafana
+    ports:
+      - '3000:3000'
+    networks:
+      - web_api
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - 6379:6379
+    networks:
+      - web_api
+volumes:
+  mysql-data:
+networks:
+  web_api:
+    driver: bridge
