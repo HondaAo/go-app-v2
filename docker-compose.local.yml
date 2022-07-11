@@ -10,12 +10,15 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: root
       MYSQL_DB: videos-app
+      PORT: 4000
     ports:
       - 4000:4000
+      - 5555:5555
     stdin_open: true
     tty: true
+      
     volumes:
-      - ./:/app:cached
+      - ./:/app
     depends_on:
       - db
       - redis
