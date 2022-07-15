@@ -55,6 +55,10 @@ func (s Server) Run() error {
 		}
 	}()
 
+	if err := s.MapHandler(s.echo); err != nil {
+		return err
+	}
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 

@@ -9,9 +9,11 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig
-	Logger Logger
-	Redis  RedisConfig
+	Server  ServerConfig
+	Logger  Logger
+	Redis   RedisConfig
+	Session Session
+	Cookie  Cookie
 }
 
 // Server config struct
@@ -50,6 +52,21 @@ type RedisConfig struct {
 	PoolTimeout    int
 	Password       string
 	DB             int
+}
+
+// Session config
+type Session struct {
+	Prefix string
+	Name   string
+	Expire int
+}
+
+// Cookie config
+type Cookie struct {
+	Name     string
+	MaxAge   int
+	Secure   bool
+	HTTPOnly bool
 }
 
 func GetConfigPath(configPath string) string {
