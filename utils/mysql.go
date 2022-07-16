@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
 
 func NewDB() *sql.DB {
-	addr := os.Getenv("DB_ADDR")
-	name := os.Getenv("DB_NAME")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
+	addr := os.Getenv("MYSQL_HOST")
+	name := os.Getenv("MYSQL_DB")
+	user := os.Getenv("MYSQL_USER")
+	password := os.Getenv("MYSQL_PASSWORD")
 	log.Println(addr)
 	log.Println(name)
 	log.Println(user)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/HondaAo/video-app/pkg/auth/model"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
@@ -21,23 +22,27 @@ func NewAuthRepository(db *sql.DB) Repository {
 // Create new user
 func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User, error) {
 	u := &model.User{}
-	stmt, err := r.db.Prepare("INSERT INTO user(first_name,last_name,email,password,role,country) VALUES(?,?,?,?) RETURNING *")
+	stmt, err := r.db.Prepare("INSERT INTO user(user_id,first_name,last_name,email,password,role,country) VALUES(?,?,?,?,?,?,?)")
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.User.Insert Error")
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(&user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(&u)
+	id := uuid.New()
+	user.UserID = id
+
+	err = stmt.QueryRow(&user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(u)
 	return u, nil
 }
 
 // Find user by email
 func (r *authRepo) FindByEmail(ctx context.Context, user *model.User) (*model.User, error) {
 	foundUser := &model.User{}
-	row, err := r.db.Query(`SELECT user_id, first_name, last_name, email, role, country, created_at, updated_at, password FROM users WHERE email = $1`)
+	row, err := r.db.Query(`SELECT user_id, first_name, last_name, email, role, country, created_at, updated_at, password FROM user WHERE email = ?`, user.Email)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}
+
 	row.Scan(foundUser)
 	return foundUser, nil
 }
