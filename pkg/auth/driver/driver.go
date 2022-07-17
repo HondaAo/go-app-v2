@@ -3,9 +3,11 @@ package driver
 import (
 	"context"
 	"database/sql"
+	dLog "log"
 
 	"github.com/HondaAo/video-app/pkg/auth/model"
 	"github.com/google/uuid"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 )
 
@@ -21,8 +23,11 @@ func NewAuthRepository(db *sql.DB) Repository {
 
 // Create new user
 func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Register")
+	defer span.Finish()
+
 	u := &model.User{}
-	stmt, err := r.db.Prepare("INSERT INTO user(user_id,first_name,last_name,email,password,role,country) VALUES(?,?,?,?,?,?,?)")
+	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO user(user_id,first_name,last_name,email,password,role,country) VALUES(?,?,?,?,?,?,?)")
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.User.Insert Error")
 	}
@@ -31,18 +36,29 @@ func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User,
 	id := uuid.New()
 	user.UserID = id
 
-	err = stmt.QueryRow(&user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(u)
+	if err = stmt.QueryRowContext(ctx, &user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(u); err != nil {
+		return nil, err
+	}
+	dLog.Print(u)
 	return u, nil
 }
 
 // Find user by email
 func (r *authRepo) FindByEmail(ctx context.Context, user *model.User) (*model.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "FindUserByEmail")
+	defer span.Finish()
+
 	foundUser := &model.User{}
-	row, err := r.db.Query(`SELECT user_id, first_name, last_name, email, role, country, created_at, updated_at, password FROM user WHERE email = ?`, user.Email)
+	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE email = ?`, user.Email)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}
 
-	row.Scan(foundUser)
+	for row.Next() {
+		if err = row.Scan(&foundUser.UserID, &foundUser.FirstName, &foundUser.LastName, &foundUser.Email, &foundUser.Password, &foundUser.Role, &foundUser.Country, &foundUser.CreatedAt, &foundUser.UpdatedAt); err != nil {
+			return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
+		}
+	}
+
 	return foundUser, nil
 }

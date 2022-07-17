@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -67,6 +70,11 @@ func (e RestError) Causes() interface{} {
 	return e.ErrCauses
 }
 
+// Error response
+func ErrorResponse(err error) (int, interface{}) {
+	return ParseErrors(err).Status(), ParseErrors(err)
+}
+
 // New Rest Error
 func NewRestError(status int, err string, causes interface{}) RestErr {
 	return RestError{
@@ -102,4 +110,52 @@ func NewInternalServerError(causes interface{}) RestErr {
 		ErrCauses: causes,
 	}
 	return result
+}
+
+// New Unauthorized Error
+func NewUnauthorizedError(causes interface{}) RestErr {
+	return RestError{
+		ErrStatus: http.StatusUnauthorized,
+		ErrError:  Unauthorized.Error(),
+		ErrCauses: causes,
+	}
+}
+
+func parseValidatorError(err error) RestErr {
+	if strings.Contains(err.Error(), "Password") {
+		return NewRestError(http.StatusBadRequest, "Invalid password, min length 6", err)
+	}
+
+	if strings.Contains(err.Error(), "Email") {
+		return NewRestError(http.StatusBadRequest, "Invalid email", err)
+	}
+
+	return NewRestError(http.StatusBadRequest, BadRequest.Error(), err)
+}
+
+// Parser of error string messages returns RestError
+func ParseErrors(err error) RestErr {
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return NewRestError(http.StatusNotFound, NotFound.Error(), err)
+	case errors.Is(err, context.DeadlineExceeded):
+		return NewRestError(http.StatusRequestTimeout, RequestTimeoutError.Error(), err)
+	case strings.Contains(err.Error(), "Field validation"):
+		return parseValidatorError(err)
+	case strings.Contains(err.Error(), "Unmarshal"):
+		return NewRestError(http.StatusBadRequest, BadRequest.Error(), err)
+	case strings.Contains(err.Error(), "UUID"):
+		return NewRestError(http.StatusBadRequest, err.Error(), err)
+	case strings.Contains(strings.ToLower(err.Error()), "cookie"):
+		return NewRestError(http.StatusUnauthorized, Unauthorized.Error(), err)
+	case strings.Contains(strings.ToLower(err.Error()), "token"):
+		return NewRestError(http.StatusUnauthorized, Unauthorized.Error(), err)
+	case strings.Contains(strings.ToLower(err.Error()), "bcrypt"):
+		return NewRestError(http.StatusBadRequest, BadRequest.Error(), err)
+	default:
+		if restErr, ok := err.(RestErr); ok {
+			return restErr
+		}
+		return NewInternalServerError(err)
+	}
 }

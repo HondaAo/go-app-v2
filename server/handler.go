@@ -1,6 +1,8 @@
 package server
 
 import (
+	"log"
+
 	apiMiddleware "github.com/HondaAo/video-app/middleware"
 	"github.com/HondaAo/video-app/pkg/auth/driver"
 	"github.com/HondaAo/video-app/pkg/auth/handler"
@@ -17,7 +19,8 @@ func (s *Server) MapHandler(e *echo.Echo) error {
 
 	aUsecase := usecase.NewAuthUseCase(&s.conf, aRepo, s.log)
 
-	aHandler := handler.NewAuthHandlers(&s.conf, aUsecase, s.log)
+	log.Print(s.redisClient)
+	aHandler := handler.NewAuthHandlers(&s.conf, aUsecase, s.log, *s.redisClient)
 
 	mw := apiMiddleware.NewMiddlewareManager(aUsecase, &s.conf, []string{"*"}, s.log)
 

@@ -41,7 +41,7 @@ func (u *authUC) Register(ctx context.Context, user *model.User) (*model.UserWit
 	defer span.Finish()
 
 	existsUser, err := u.authRepo.FindByEmail(ctx, user)
-	if existsUser != nil || err == nil {
+	if existsUser.FirstName != "" || err != nil {
 		return nil, utils.NewRestErrorWithMessage(http.StatusBadRequest, utils.ErrEmailAlreadyExists, nil)
 	}
 
@@ -63,6 +63,31 @@ func (u *authUC) Register(ctx context.Context, user *model.User) (*model.UserWit
 
 	return &model.UserWithToken{
 		User:  createdUser,
+		Token: token,
+	}, nil
+}
+
+// Login user, returns user model with jwt token
+func (u *authUC) Login(ctx context.Context, user *model.User) (*model.UserWithToken, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.Login")
+	defer span.Finish()
+
+	foundUser, err := u.authRepo.FindByEmail(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = foundUser.ComparePasswords(user.Password); err != nil {
+		return nil, utils.NewUnauthorizedError(errors.Wrap(err, "authUC.GetUsers.ComparePasswords"))
+	}
+
+	token, err := authUtils.GenerateJWTToken(foundUser, u.cfg)
+	if err != nil {
+		return nil, utils.NewInternalServerError(errors.Wrap(err, "authUC.GetUsers.GenerateJWTToken"))
+	}
+
+	return &model.UserWithToken{
+		User:  foundUser,
 		Token: token,
 	}, nil
 }

@@ -1,6 +1,5 @@
+make --dry-run --always-make --keep-going --print-directory
 make: Entering directory `/Users/hondaao/go/src/github.com/HondaAo/video-app'
- 
-make: *** No targets.  Stop.
-
+docker-compose -f docker-compose.local.yml up --build
 make: Leaving directory `/Users/hondaao/go/src/github.com/HondaAo/video-app'
  

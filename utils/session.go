@@ -22,7 +22,7 @@ type Session struct {
 }
 
 // Create session in redis
-func CreateSession(ctx context.Context, sess Session, expire int) (string, error) {
+func CreateSession(ctx context.Context, redisClient redis.Client, sess Session, expire int) (string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "sessionRepo.CreateSession")
 	defer span.Finish()
 
@@ -33,7 +33,7 @@ func CreateSession(ctx context.Context, sess Session, expire int) (string, error
 	if err != nil {
 		return "", errors.WithMessage(err, "sessionRepo.CreateSession.json.Marshal")
 	}
-	if err = redis.Client.Set(redis.Client{}, ctx, sessionKey, string(sessBytes), time.Second*time.Duration(expire)).Err(); err != nil {
+	if err = redisClient.Set(ctx, sessionKey, string(sessBytes), time.Second*time.Duration(expire)).Err(); err != nil {
 		return "", errors.Wrap(err, "sessionRepo.CreateSession.redisClient.Set")
 	}
 	return sessionKey, nil
