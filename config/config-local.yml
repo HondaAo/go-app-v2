@@ -29,7 +29,7 @@ postgres:
   PgDriver: pgx
 
 redis:
-  RedisAddr: localhost:6379
+  RedisAddr: redis:6379
   RedisPassword:
   RedisDb: 0
   RedisDefaultdb: 0
@@ -38,3 +38,19 @@ redis:
   PoolTimeout: 240
   Password: ""
   DB: 0
+
+cookie:
+  Name: jwt-token
+  MaxAge: 86400
+  Secure: false
+  HttpOnly: true
+
+session:
+  Name: session-id
+  Prefix: api-session
+  Expire: 3600
+
+jaeger:
+  Host: localhost:6831
+  ServiceName: REST_API
+  LogSpans: false

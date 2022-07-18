@@ -4,12 +4,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	UserID    uuid.UUID `json:"user_id" db:"user_id" redis:"user_id"`
+	UserID    string    `json:"user_id" db:"user_id" redis:"user_id"`
 	FirstName string    `json:"first_name" db:"first_name" redis:"first_name"`
 	LastName  string    `json:"last_name" db:"last_name" redis:"last_name"`
 	Email     string    `json:"email" db:"email" redis:"email"`

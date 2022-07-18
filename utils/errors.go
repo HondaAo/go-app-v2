@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/HondaAo/video-app/log"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -131,6 +134,17 @@ func parseValidatorError(err error) RestErr {
 	}
 
 	return NewRestError(http.StatusBadRequest, BadRequest.Error(), err)
+}
+
+// Error response with logging error for echo context
+func ErrResponseWithLog(ctx echo.Context, logger log.Logger, err error) error {
+	logger.Errorf(
+		"ErrResponseWithLog, RequestID: %s, IPAddress: %s, Error: %s",
+		GetRequestID(ctx),
+		GetIPAddress(ctx),
+		err,
+	)
+	return ctx.JSON(ErrorResponse(err))
 }
 
 // Parser of error string messages returns RestError

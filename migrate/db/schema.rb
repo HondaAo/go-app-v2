@@ -12,4 +12,26 @@
 
 ActiveRecord::Schema.define(version: 0) do
 
+  create_table "tblsample", id: :integer, charset: "latin1", force: :cascade do |t|
+    t.integer "recid", default: 0, null: false
+    t.string "cvfilename", limit: 250, default: "", null: false
+    t.integer "cvpagenumber"
+    t.integer "cilineno"
+    t.string "batchname", limit: 100, default: "", null: false
+    t.string "type", limit: 20, default: "", null: false
+    t.string "data", limit: 100, default: "", null: false
+  end
+
+  create_table "user", primary_key: "user_id", id: { type: :string, limit: 100 }, charset: "latin1", force: :cascade do |t|
+    t.string "first_name", limit: 32, null: false
+    t.string "last_name", limit: 32, null: false
+    t.string "email", limit: 64, null: false
+    t.string "password"
+    t.string "role", limit: 10, default: "user", null: false
+    t.string "country", limit: 30
+    t.timestamp "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.timestamp "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["email"], name: "email", unique: true
+  end
+
 end

@@ -3,10 +3,10 @@ package server
 import (
 	"log"
 
-	apiMiddleware "github.com/HondaAo/video-app/middleware"
 	"github.com/HondaAo/video-app/pkg/auth/driver"
 	"github.com/HondaAo/video-app/pkg/auth/handler"
 	authHandler "github.com/HondaAo/video-app/pkg/auth/handler"
+	apiMiddleware "github.com/HondaAo/video-app/pkg/auth/middleware"
 	"github.com/HondaAo/video-app/pkg/auth/usecase"
 	"github.com/HondaAo/video-app/utils"
 	"github.com/labstack/echo/v4"
@@ -22,7 +22,7 @@ func (s *Server) MapHandler(e *echo.Echo) error {
 	log.Print(s.redisClient)
 	aHandler := handler.NewAuthHandlers(&s.conf, aUsecase, s.log, *s.redisClient)
 
-	mw := apiMiddleware.NewMiddlewareManager(aUsecase, &s.conf, []string{"*"}, s.log)
+	mw := apiMiddleware.NewMiddlewareManager(aUsecase, &s.conf, []string{"*"}, s.log, *s.redisClient)
 
 	e.Use(mw.RequestLoggerMiddleware)
 
@@ -39,7 +39,7 @@ func (s *Server) MapHandler(e *echo.Echo) error {
 	v1 := e.Group("/api/v1")
 	authGroup := v1.Group("/auth")
 
-	authHandler.MapAuthRoutes(authGroup, aHandler)
+	authHandler.MapAuthRoutes(authGroup, aHandler, *mw)
 
 	return nil
 }

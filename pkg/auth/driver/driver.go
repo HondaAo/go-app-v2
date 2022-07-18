@@ -34,7 +34,7 @@ func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User,
 	defer stmt.Close()
 
 	id := uuid.New()
-	user.UserID = id
+	user.UserID = id.String()
 
 	if err = stmt.QueryRowContext(ctx, &user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(u); err != nil {
 		return nil, err
@@ -61,4 +61,23 @@ func (r *authRepo) FindByEmail(ctx context.Context, user *model.User) (*model.Us
 	}
 
 	return foundUser, nil
+}
+
+// Get user by id
+func (r *authRepo) GetByID(ctx context.Context, userID string) (*model.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authRepo.GetByID")
+	defer span.Finish()
+
+	user := &model.User{}
+	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE email = ?`, user.Email)
+	if err != nil {
+		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
+	}
+
+	for row.Next() {
+		if err = row.Scan(&user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
+		}
+	}
+	return user, nil
 }

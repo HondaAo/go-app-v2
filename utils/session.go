@@ -17,9 +17,11 @@ const (
 )
 
 type Session struct {
-	SessionID string    `json:"session_id" redis:"session_id"`
-	UserID    uuid.UUID `json:"user_id" redis:"user_id"`
+	SessionID string `json:"session_id" redis:"session_id"`
+	UserID    string `json:"user_id" redis:"user_id"`
 }
+
+type UserCtxKey struct{}
 
 // Create session in redis
 func CreateSession(ctx context.Context, redisClient redis.Client, sess Session, expire int) (string, error) {
@@ -37,6 +39,23 @@ func CreateSession(ctx context.Context, redisClient redis.Client, sess Session, 
 		return "", errors.Wrap(err, "sessionRepo.CreateSession.redisClient.Set")
 	}
 	return sessionKey, nil
+}
+
+// get session by id
+func GetSessionByID(ctx context.Context, redis redis.Client, sessionID string) (*Session, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "sessionUC.GetSessionByID")
+	defer span.Finish()
+
+	sessBytes, err := redis.Get(ctx, sessionID).Bytes()
+	if err != nil {
+		return nil, errors.Wrap(err, "sessionRep.GetSessionByID.redisClient.Get")
+	}
+
+	sess := &Session{}
+	if err = json.Unmarshal(sessBytes, &sess); err != nil {
+		return nil, errors.Wrap(err, "sessionRepo.GetSessionByID.json.Unmarshal")
+	}
+	return sess, nil
 }
 
 func createKey(sessionID string) string {

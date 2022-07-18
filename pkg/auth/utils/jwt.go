@@ -20,7 +20,7 @@ func GenerateJWTToken(user *model.User, config *config.Config) (string, error) {
 	// Register the JWT claims, which includes the username and expiry time
 	claims := &Claims{
 		Email: user.Email,
-		ID:    user.UserID.String(),
+		ID:    user.UserID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Minute * 60).Unix(),
 		},

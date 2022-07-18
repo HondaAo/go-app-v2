@@ -22,7 +22,7 @@ type Handlers interface {
 	// Delete() echo.HandlerFunc
 	// GetUserByID() echo.HandlerFunc
 	// GetUsers() echo.HandlerFunc
-	// GetMe() echo.HandlerFunc
+	GetMe() echo.HandlerFunc
 	// GetCSRFToken() echo.HandlerFunc
 }
 
@@ -124,5 +124,21 @@ func (h *authHandlers) Login() echo.HandlerFunc {
 		})
 
 		return c.JSON(http.StatusOK, userWithToken)
+	}
+}
+
+func (h *authHandlers) GetMe() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		span, _ := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "auth.Register")
+		defer span.Finish()
+
+		dLog.Print(c.Get("user"))
+		user, ok := c.Get("user").(*model.User)
+		if !ok {
+			utils.LogResponseError(c, h.logger, utils.NewUnauthorizedError(utils.Unauthorized))
+			return utils.ErrResponseWithLog(c, h.logger, utils.NewUnauthorizedError(utils.Unauthorized))
+		}
+
+		return c.JSON(http.StatusOK, user)
 	}
 }

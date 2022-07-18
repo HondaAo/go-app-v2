@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/HondaAo/video-app/config"
@@ -20,19 +21,27 @@ const (
 
 // Auth UseCase
 type authUC struct {
-	cfg      *config.Config
-	authRepo Repository
-	logger   log.Logger
+	cfg       *config.Config
+	authRepo  Repository
+	redisRepo RedisRepository
+	logger    log.Logger
 }
 
 type Repository interface {
 	Register(ctx context.Context, user *model.User) (*model.User, error)
 	FindByEmail(ctx context.Context, user *model.User) (*model.User, error)
+	GetByID(ctx context.Context, userID string) (*model.User, error)
+}
+
+type RedisRepository interface {
+	GetByIDCtx(ctx context.Context, key string) (*model.User, error)
+	SetUserCtx(ctx context.Context, key string, seconds int, user *model.User) error
+	// DeleteUserCtx(ctx context.Context, key string) error
 }
 
 // Auth UseCase constructor
-func NewAuthUseCase(cfg *config.Config, authRepo Repository, log log.Logger) UseCase {
-	return &authUC{cfg: cfg, authRepo: authRepo, logger: log}
+func NewAuthUseCase(cfg *config.Config, authRepo Repository, redisRepo RedisRepository, log log.Logger) UseCase {
+	return &authUC{cfg: cfg, authRepo: authRepo, redisRepo: redisRepo, logger: log}
 }
 
 // Create new user
@@ -90,4 +99,35 @@ func (u *authUC) Login(ctx context.Context, user *model.User) (*model.UserWithTo
 		User:  foundUser,
 		Token: token,
 	}, nil
+}
+
+// Get user by id
+func (u *authUC) GetByID(ctx context.Context, userID string) (*model.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "authUC.GetByID")
+	defer span.Finish()
+
+	cachedUser, err := u.redisRepo.GetByIDCtx(ctx, u.GenerateUserKey(userID))
+	if err != nil {
+		u.logger.Errorf("authUC.GetByID.GetByIDCtx: %v", err)
+	}
+	if cachedUser != nil {
+		return cachedUser, nil
+	}
+
+	user, err := u.authRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = u.redisRepo.SetUserCtx(ctx, u.GenerateUserKey(userID), cacheDuration, user); err != nil {
+		u.logger.Errorf("authUC.GetByID.SetUserCtx: %v", err)
+	}
+
+	user.Password = ""
+
+	return user, nil
+}
+
+func (u *authUC) GenerateUserKey(userID string) string {
+	return fmt.Sprintf("%s: %s", basePrefix, userID)
 }
