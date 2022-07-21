@@ -69,7 +69,7 @@ func (r *authRepo) GetByID(ctx context.Context, userID string) (*model.User, err
 	defer span.Finish()
 
 	user := &model.User{}
-	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE email = ?`, user.Email)
+	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE user_id = ?`, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}

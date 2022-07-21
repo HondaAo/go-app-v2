@@ -16,8 +16,9 @@ import (
 func (s *Server) MapHandler(e *echo.Echo) error {
 
 	aRepo := driver.NewAuthRepository(s.db)
+	authRedisRepo := driver.NewAuthRedisRepo(s.redisClient)
 
-	aUsecase := usecase.NewAuthUseCase(&s.conf, aRepo, s.log)
+	aUsecase := usecase.NewAuthUseCase(&s.conf, aRepo, authRedisRepo, s.log)
 
 	log.Print(s.redisClient)
 	aHandler := handler.NewAuthHandlers(&s.conf, aUsecase, s.log, *s.redisClient)

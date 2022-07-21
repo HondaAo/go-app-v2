@@ -58,6 +58,16 @@ func GetSessionByID(ctx context.Context, redis redis.Client, sessionID string) (
 	return sess, nil
 }
 
+func DeleteByID(ctx context.Context, sessionID string, redis redis.Client) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "sessionUC.DeleteByID")
+	defer span.Finish()
+
+	if err := redis.Del(ctx, sessionID).Err(); err != nil {
+		return errors.Wrap(err, "sessionRepo.DeleteByID")
+	}
+	return nil
+}
+
 func createKey(sessionID string) string {
 	return fmt.Sprintf("%s: %s", basePrefix, sessionID)
 }

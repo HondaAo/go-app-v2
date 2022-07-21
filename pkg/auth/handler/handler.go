@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	dLog "log"
 	"net/http"
 
@@ -17,7 +18,7 @@ import (
 type Handlers interface {
 	Register() echo.HandlerFunc
 	Login() echo.HandlerFunc
-	// Logout() echo.HandlerFunc
+	Logout() echo.HandlerFunc
 	// Update() echo.HandlerFunc
 	// Delete() echo.HandlerFunc
 	// GetUserByID() echo.HandlerFunc
@@ -132,7 +133,6 @@ func (h *authHandlers) GetMe() echo.HandlerFunc {
 		span, _ := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "auth.Register")
 		defer span.Finish()
 
-		dLog.Print(c.Get("user"))
 		user, ok := c.Get("user").(*model.User)
 		if !ok {
 			utils.LogResponseError(c, h.logger, utils.NewUnauthorizedError(utils.Unauthorized))
@@ -140,5 +140,36 @@ func (h *authHandlers) GetMe() echo.HandlerFunc {
 		}
 
 		return c.JSON(http.StatusOK, user)
+	}
+}
+
+func (h *authHandlers) Logout() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "authHandlers.Logout")
+		defer span.Finish()
+
+		cookie, err := c.Cookie("session-id")
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				utils.LogResponseError(c, h.logger, err)
+				return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError(err))
+			}
+			utils.LogResponseError(c, h.logger, err)
+			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError(err))
+		}
+
+		if err := utils.DeleteByID(ctx, cookie.Value, h.redis); err != nil {
+			utils.LogResponseError(c, h.logger, err)
+			return c.JSON(utils.ErrorResponse(err))
+		}
+
+		c.SetCookie(&http.Cookie{
+			Name:   h.cfg.Session.Name,
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
+
+		return c.NoContent(http.StatusOK)
 	}
 }

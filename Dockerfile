@@ -27,6 +27,6 @@ RUN go get -u github.com/githubnemo/CompileDaemon
 WORKDIR /app
 ENV config=docker
 
-EXPOSE 4000 5555
+EXPOSE 4000 
 
 ENTRYPOINT CompileDaemon --build="go build cmd/api/main.go" --command=./main
