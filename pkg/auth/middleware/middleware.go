@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	dLog "log"
 	"net/http"
 
 	"github.com/HondaAo/video-app/config"
@@ -53,7 +52,6 @@ func (mw *MiddlewareManager) AuthSessionMiddleware(next echo.HandlerFunc) echo.H
 			)
 			return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError(utils.Unauthorized))
 		}
-		dLog.Print(sess.UserID)
 
 		user, err := mw.authUC.GetByID(c.Request().Context(), sess.UserID)
 		if err != nil {

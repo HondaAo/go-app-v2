@@ -3,7 +3,6 @@ package driver
 import (
 	"context"
 	"database/sql"
-	dLog "log"
 
 	"github.com/HondaAo/video-app/pkg/auth/model"
 	"github.com/google/uuid"
@@ -27,7 +26,7 @@ func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User,
 	defer span.Finish()
 
 	u := &model.User{}
-	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO user(user_id,first_name,last_name,email,password,role,country) VALUES(?,?,?,?,?,?,?)")
+	stmt, err := r.db.PrepareContext(ctx, "INSERT INTO users(user_id,first_name,last_name,email,password,role,country) VALUES(?,?,?,?,?,?,?)")
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.User.Insert Error")
 	}
@@ -39,7 +38,6 @@ func (r *authRepo) Register(ctx context.Context, user *model.User) (*model.User,
 	if err = stmt.QueryRowContext(ctx, &user.UserID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Role, &user.Country).Scan(u); err != nil {
 		return nil, err
 	}
-	dLog.Print(u)
 	return u, nil
 }
 
@@ -49,7 +47,7 @@ func (r *authRepo) FindByEmail(ctx context.Context, user *model.User) (*model.Us
 	defer span.Finish()
 
 	foundUser := &model.User{}
-	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE email = ?`, user.Email)
+	row, err := r.db.QueryContext(ctx, `SELECT * FROM users WHERE email = ?`, user.Email)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}
@@ -69,7 +67,7 @@ func (r *authRepo) GetByID(ctx context.Context, userID string) (*model.User, err
 	defer span.Finish()
 
 	user := &model.User{}
-	row, err := r.db.QueryContext(ctx, `SELECT * FROM user WHERE user_id = ?`, userID)
+	row, err := r.db.QueryContext(ctx, `SELECT * FROM users WHERE user_id = ?`, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}

@@ -16,13 +16,9 @@ func NewDB() *sql.DB {
 	name := os.Getenv("MYSQL_DB")
 	user := os.Getenv("MYSQL_USER")
 	password := os.Getenv("MYSQL_PASSWORD")
-	log.Println(addr)
-	log.Println(name)
-	log.Println(user)
-	log.Println(password)
 
 	dsn := fmt.Sprintf(
-		"%s:%s@(%s)/%s?charset=utf8mb4&parseTime=true",
+		"%s:%s@(%s)/%s?charset=utf8mb4&parseTime=true&multiStatements=true",
 		user,
 		password,
 		addr,
@@ -30,9 +26,19 @@ func NewDB() *sql.DB {
 	)
 	var err error
 	db, err = sql.Open("mysql", dsn)
+	log.Print(dsn)
 	if err != nil {
 		log.Fatalf("main SQL Open: %v", err)
 	}
+
+	// driver, _ := mysql.WithInstance(db, &mysql.Config{})
+	// m, err := migrate.NewWithDatabaseInstance(
+	// 	"file://migrations",
+	// 	"mysql",
+	// 	driver,
+	// )
+
+	// m.Up()
 
 	return db
 }

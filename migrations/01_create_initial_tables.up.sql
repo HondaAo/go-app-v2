@@ -1,0 +1,33 @@
+CREATE TABLE IF NOT EXISTS `users` (
+    `user_id`   VARCHAR(100) PRIMARY KEY,
+    `first_name`   VARCHAR(32) NOT NULL,
+    `last_name`   VARCHAR(32) NOT NULL,
+    `email`   VARCHAR(64) UNIQUE NOT NULL,
+    `password`   VARCHAR(250) NOT NULL,
+    `role`   VARCHAR(10) NOT NULL DEFAULT 'user',
+    `country`   VARCHAR(30),
+    `created_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `videos` (
+    `video_id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+    `title` VARCHAR(100) NOT NULL,
+    `url` VARCHAR(100) NOT NULL,
+    `view` INTEGER NOT NULL DEFAULT 0,
+    `category` VARCHAR(100) NOT NULL,
+    `series` VARCHAR(100) NOT NULL,
+    `end` INTEGER NOT NULL,
+    `start` INTEGER NOT NULL DEFAULT 0,
+    `level` VARCHAR(100) NOT NULL,
+    `created_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `scripts` (
+    `script_id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+    `video_id` INTEGER NOT NULL,
+    `text` VARCHAR(255) NOT NULL,
+    `ja` VARCHAR(255) NOT NULL,
+    `timestamp` INTEGER NOT NULL
+);
