@@ -1,8 +1,6 @@
 package server
 
 import (
-	"log"
-
 	"github.com/HondaAo/video-app/pkg/auth/driver"
 	"github.com/HondaAo/video-app/pkg/auth/handler"
 	authHandler "github.com/HondaAo/video-app/pkg/auth/handler"
@@ -17,7 +15,6 @@ import (
 )
 
 func (s *Server) MapHandler(e *echo.Echo) error {
-
 	aRepo := driver.NewAuthRepository(s.db)
 	vRepo := videoDriver.NewVideoRepository(s.db)
 	authRedisRepo := driver.NewAuthRedisRepo(s.redisClient)
@@ -25,7 +22,6 @@ func (s *Server) MapHandler(e *echo.Echo) error {
 	aUsecase := usecase.NewAuthUseCase(&s.conf, aRepo, authRedisRepo, s.log)
 	vUsecase := videoUsecase.NewVideoUsecase(s.conf, s.log, vRepo)
 
-	log.Print(s.redisClient)
 	aHandler := handler.NewAuthHandlers(&s.conf, aUsecase, s.log, *s.redisClient)
 	vHandler := videoHandler.NewVideoHandler(&s.conf, s.log, vUsecase)
 

@@ -38,18 +38,6 @@ services:
        - ./migrate/db/init:/docker-entrypoint-initdb.d
     networks:
       - web_api
-  migrate:
-    build:
-      context: .
-      dockerfile: ./migrate/Dockerfile
-    environment:
-      RAILS_ENV: local
-    volumes:
-      - ./migrate:/app/migrate
-    networks:
-      - web_api
-    depends_on:
-      - db
   grafana:
     container_name: grafana
     restart: always

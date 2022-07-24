@@ -14,6 +14,7 @@ type Config struct {
 	Redis   RedisConfig
 	Session Session
 	Cookie  Cookie
+	Jaeger  Jaeger
 }
 
 // Server config struct
@@ -67,6 +68,12 @@ type Cookie struct {
 	MaxAge   int
 	Secure   bool
 	HTTPOnly bool
+}
+
+type Jaeger struct {
+	Host        string
+	ServiceName string
+	LogSpans    bool
 }
 
 func GetConfigPath(configPath string) string {

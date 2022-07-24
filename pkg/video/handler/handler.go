@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
 
 	"github.com/HondaAo/video-app/config"
 	"github.com/HondaAo/video-app/log"
@@ -13,7 +15,9 @@ import (
 )
 
 type Handler interface {
-	POST() echo.HandlerFunc
+	Post() echo.HandlerFunc
+	Get() echo.HandlerFunc
+	GetAll() echo.HandlerFunc
 }
 
 type videoHandlers struct {
@@ -42,7 +46,7 @@ func NewVideoHandler(cfg *config.Config, logger log.Logger, videoUsecase usecase
 	}
 }
 
-func (h videoHandlers) POST() echo.HandlerFunc {
+func (h videoHandlers) Post() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "newsHandlers.Create")
 		defer span.Finish()
@@ -76,5 +80,55 @@ func (h videoHandlers) POST() echo.HandlerFunc {
 		}
 
 		return c.JSON(200, createdVideo)
+	}
+}
+
+func (h videoHandlers) GetAll() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "videoHandlers.GETALL")
+		defer span.Finish()
+
+		pq, err := utils.GetPaginationFromCtx(c)
+		if err != nil {
+			utils.LogResponseError(c, h.logger, err)
+			return c.JSON(utils.ErrorResponse(err))
+		}
+
+		videoList, err := h.videoUsecase.GetAll(ctx, pq)
+		if err != nil {
+			utils.LogResponseError(c, h.logger, err)
+			return c.JSON(utils.ErrorResponse(err))
+		}
+
+		return c.JSON(http.StatusOK, videoList)
+	}
+}
+
+func (h videoHandlers) Get() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		span, ctx := opentracing.StartSpanFromContext(utils.GetRequestCtx(c), "videoHandlers.GET")
+		defer span.Finish()
+
+		id, _ := strconv.Atoi(c.Param("id"))
+
+		video, script, err := h.videoUsecase.Get(ctx, id)
+		if err != nil {
+			utils.LogResponseError(c, h.logger, err)
+			return c.JSON(utils.ErrorResponse(err))
+		}
+
+		stringScript, _ := json.Marshal(script)
+		videoResponse := &VideoResponse{
+			Title:    video.Title,
+			Url:      video.Url,
+			Category: video.Category,
+			Series:   video.Series,
+			View:     video.View,
+			Start:    video.Start,
+			End:      video.End,
+			Script:   string(stringScript),
+		}
+
+		return c.JSON(http.StatusOK, videoResponse)
 	}
 }

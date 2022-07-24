@@ -6,5 +6,7 @@ import (
 )
 
 func MapVideoRoute(videoGroup echo.Group, h Handler, mw middleware.MiddlewareManager) {
-	videoGroup.POST("/create", h.POST(), mw.AuthSessionMiddleware)
+	videoGroup.POST("/create", h.Post(), mw.AuthSessionMiddleware)
+	videoGroup.GET("/all", h.GetAll(), mw.AuthSessionMiddleware)
+	videoGroup.GET("/:id", h.Get(), mw.AuthSessionMiddleware)
 }
