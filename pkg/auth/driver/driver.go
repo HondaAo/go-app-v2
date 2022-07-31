@@ -47,13 +47,13 @@ func (r *authRepo) FindByEmail(ctx context.Context, user *model.User) (*model.Us
 	defer span.Finish()
 
 	foundUser := &model.User{}
-	row, err := r.db.QueryContext(ctx, `SELECT * FROM users WHERE email = ?`, user.Email)
+	row, err := r.db.QueryContext(ctx, `SELECT user_id, password FROM users WHERE email = ?`, user.Email)
 	if err != nil {
 		return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 	}
 
 	for row.Next() {
-		if err = row.Scan(&foundUser.UserID, &foundUser.FirstName, &foundUser.LastName, &foundUser.Email, &foundUser.Password, &foundUser.Role, &foundUser.Country, &foundUser.CreatedAt, &foundUser.UpdatedAt); err != nil {
+		if err = row.Scan(&foundUser.UserID, &foundUser.Password); err != nil {
 			return nil, errors.Wrap(err, "authRepo.FindByEmail. Error")
 		}
 	}

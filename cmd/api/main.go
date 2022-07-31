@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -14,6 +16,10 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	jaegerlog "github.com/uber/jaeger-client-go/log"
 	"github.com/uber/jaeger-lib/metrics"
+
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 func main() {
@@ -66,10 +72,35 @@ func main() {
 
 	opentracing.SetGlobalTracer(tracer)
 	defer closer.Close()
+
 	appLogger.Info("Opentracing connected")
+
+	explicit("digital-maker-270904")
 
 	s := server.NewServer(mysql, *cfg, redisClient, appLogger)
 	if err = s.Run(); err != nil {
 		log.Fatal(err)
+	}
+
+}
+
+func explicit(projectID string) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx, option.WithCredentialsFile("/app/cmd/api/google.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+	fmt.Println("Buckets:")
+	it := client.Buckets(ctx, projectID)
+	for {
+		battrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(battrs.Name)
 	}
 }

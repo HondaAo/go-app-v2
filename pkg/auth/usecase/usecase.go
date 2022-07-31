@@ -63,12 +63,12 @@ func (u *authUC) Register(ctx context.Context, user *model.User) (*model.UserWit
 		return nil, err
 	}
 
-	createdUser.Password = ""
-
 	token, err := authUtils.GenerateJWTToken(createdUser, u.cfg)
 	if err != nil {
 		return nil, utils.NewInternalServerError(errors.Wrap(err, "authUC.Register.GenerateJWTToken"))
 	}
+
+	createdUser.Password = ""
 
 	return &model.UserWithToken{
 		User:  createdUser,
@@ -95,6 +95,8 @@ func (u *authUC) Login(ctx context.Context, user *model.User) (*model.UserWithTo
 		return nil, utils.NewInternalServerError(errors.Wrap(err, "authUC.GetUsers.GenerateJWTToken"))
 	}
 
+	foundUser.Password = ""
+
 	return &model.UserWithToken{
 		User:  foundUser,
 		Token: token,
@@ -108,9 +110,11 @@ func (u *authUC) GetByID(ctx context.Context, userID string) (*model.User, error
 
 	cachedUser, err := u.redisRepo.GetByIDCtx(ctx, u.GenerateUserKey(userID))
 	if err != nil {
-		u.logger.Errorf("authUC.GetByID.GetByIDCtx: %v", err)
+		// u.logger.Errorf("authUC.GetByID.GetByIDCtx: %v", err)
+		return nil, err
 	}
 	if cachedUser != nil {
+		cachedUser.Password = ""
 		return cachedUser, nil
 	}
 
