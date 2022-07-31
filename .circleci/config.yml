@@ -1,42 +1,60 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
+version: 2
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+defaults: &defaults
+  docker:
+  - image: golang:stretch
+  working_directory: /workspace
+  environment:
+    GOPATH: /
+    GOCACHE: /.cache/go-build
+    GO111MODULE: "on"
+
 jobs:
-  build:
-    working_directory: ~/repo
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    docker:
-      - image: circleci/golang:1.15.8
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+  setup-build:
+    <<: *defaults
     steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - go-mod-v4-{{ checksum "go.sum" }}
-      - run:
-          name: Install Dependencies
-          command: go mod download
-      - save_cache:
-          key: go-mod-v4-{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
-      - run:
-          name: Run tests
-          command: |
-            mkdir -p /tmp/test-reports
-            gotestsum --junitfile /tmp/test-reports/unit-tests.xml
-      - store_test_results:
-          path: /tmp/test-reports
+    - run: go env
+    - checkout
+    - restore_cache:
+        keys:
+        - go-module-cache-v1-{{ checksum "/workspace/go.sum" }}
+        - go-module-cache-v1-
+    - run: go mod download
+    - save_cache:
+        key: go-module-cache-v1-{{ checksum "/workspace/go.sum" }}
+        paths:
+        - /pkg/mod/cache
+    - save_cache:
+        key: workspace-v1-{{ .Environment.CIRCLE_SHA1 }}
+        paths:
+        - /workspace
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+  test:
+    <<: *defaults
+    steps:
+    - restore_cache:
+        keys:
+        - workspace-v1-{{ .Environment.CIRCLE_SHA1 }}
+    - restore_cache:
+        keys:
+        - go-module-cache-v1-{{ checksum "/workspace/go.sum" }}
+        - go-module-cache-v1-
+    - restore_cache:
+        keys:
+        - go-build-cache-v1-{{ .Branch }}-{{ .Revision }}
+        - go-build-cache-v1-{{ .Branch }}
+        - go-build-cache-v1
+    - run: go test -v ./...
+    - save_cache:
+        key: go-build-cache-v1-{{ .Branch }}-{{ .Revision }}
+        paths:
+        - /.cache/go-build
+
 workflows:
-  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  version: 2
+  test:
     jobs:
-      - build
+    - setup-build
+    - test:
+        requires:
+        - setup-build
